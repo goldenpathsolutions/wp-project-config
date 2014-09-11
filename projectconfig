@@ -84,8 +84,8 @@ PROJECT_URL=$PROJECT_SLUG.$URL_SUFFIX
 matchend='# END Virtual Hosts'
 
 # add our bookends if not there already
-if ! grep -q "$matchend" /etc/hosts ; then
-	echo "# BEGIN Virtual Hosts\n$matchend" >> /etc/hosts
+if ! grep -q "$matchend" $HOSTS_FILE ; then
+	printf "# BEGIN Virtual Hosts\n$matchend" >> $HOSTS_FILE
 fi
 
 #  if our host doesn't exist already, insert it 
@@ -147,6 +147,7 @@ printf "Restarted Apache\n"
 printf "\n"
 
 
-# Set up database
+
+
 
 
