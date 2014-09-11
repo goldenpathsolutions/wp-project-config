@@ -1,0 +1,77 @@
+##!/bin/bash 
+
+# ProjectConfig automates boilerplate for adding a new project with existing code
+# Adds the given url to hosts, and url & path to apache config
+# parameters:
+#   Host URL - (Required) local host that links to root of site
+#   Root Directory - (optional) full path to root directory.  Uses current working directory by default.
+
+# add line to make it pretty
+echo "\n"
+
+# validate arguments
+if [ $# -gt 2 ] || [ $# -lt 1 ]; then
+	echo "$# Arguments found. :-/\nUsage: projectconfig <Host URL> [Root Directory]\nRoot Directory = current directory by default"
+	exit 1
+fi
+
+# Set the Root Directory
+if [ $# -eq 2 ]; then
+	ROOTDIR=$2
+fi
+if [ $# -eq 1 ]; then
+	ROOTDIR=$(pwd)
+fi
+
+# Handle addetion of Host URL to Hosts file.  Points URL at localhost
+# Insert before END Virtual Hosts, or append to file
+
+matchend='# END Virtual Hosts'
+
+# add our bookends if not there already
+if ! grep -q "$matchend" /etc/hosts ; then
+	echo "# BEGIN Virtual Hosts\n$matchend" >> /etc/hosts
+fi
+
+#  if our host doesn't exist already, insert it 
+if ! grep -q "$1" /etc/hosts ; then
+ 
+	sed -i '.bak' 's/# END Virtual Hosts/127.0.0.1 '"$1"'\'$'\n# END Virtual Hosts/' /etc/hosts	
+	
+else
+
+	echo "$1 already exists in hosts file"
+
+fi
+
+# Handle addition of virtual host record in apache config file
+
+userconf="/etc/apache2/users/$SUDO_USER.conf"
+
+# Add virtual host record if it doesn't already exist
+# assume it exists if the root path is found
+if ! grep -q "$ROOTDIR" $userconf ; then
+
+	echo "\n<VirtualHost *:80>\n \
+	ServerName $1 \n\
+	DocumentRoot $ROOTDIR \n\
+	SetEnv APPLICATION_ENV \"development\" \n\
+	<Directory $ROOTDIR> \n\
+		DirectoryIndex index.php \n\
+		AllowOverride All \n\
+		Order allow,deny \n\
+		Allow from all \n\
+	</Directory> \n\
+</VirtualHost> \n" >> $userconf 
+
+else
+
+	echo "$1 already exists in $userconf"
+	
+fi
+
+# Finally, restart apache
+apachectl restart
+
+# add line to make it pretty
+echo "\n"
