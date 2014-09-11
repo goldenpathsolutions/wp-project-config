@@ -8,9 +8,12 @@
 # creates a database schema called slug if it doesn't already exist, and grants the default
 # user account full access to it.
 #
+# Note: you will probably have to run this with sudo
+#
 # Author: 	Patrick Jackson <pjackson@goldenpathsolutions.com>
 # Version:	1.1.0
-# License: 	GPL2.0
+# License: 	GPL2
+# Modified:	2014-09-11
 # Created: 	2014-09-10
 
 
@@ -26,6 +29,8 @@ VERSION=1.1.0
 URL_SUFFIX="localhost" 	# appended to the slug to create the URL
 IP_ADDRESS="127.0.0.1"	# IP Address associated with the URL in the host file record created
 MYSQL_USER="pjackson"	# account to which schema access is granted
+MYSQL_ADMIN="root"		# MySQL administrative account used to create DB and grant access
+MYSQL_ADMIN_PW="********"		# Password for MySQL admin account
 SITE_ROOT="/Users/pjackson/Sites"		# by default, the web site directory is added here with 
 DIR_OWNER="pjackson:staff"	# owner of the directory created
 HOSTS_FILE="/etc/hosts"	# location of hosts file
@@ -40,17 +45,20 @@ Usage: projectconfig [ -? | -v | PROJECT_SLUG ]\n\n \
 \tPROJECT_SLUG\t: a string of characters that would be allowed as a host name.\n\n \
 "
 DESCRIPTION="Defaults: \n\tThe following are defined in the application. Listed are the current defaults.  Edit the app to change these.\n\n \
-\tURL_SUFFIX = $URL_SUFFIX\n\tAppended to PROJECT_SLUG to create the project URL (PROJECT_SLUG.URL_SUFFIX)\n\n \
-\tIP_ADDRESS = $IP_ADDRESS\n\tIP Address associated with the URL in the host file record created\n\n \
-\tMYSQL_USER = $MYSQL_USER\n\tThe MySQL account to whom full schema access is granted.  The MySQL schema created is named PROJECT_SLUG\n\n \
-\tSITE_ROOT = $SITE_ROOT\n\tThe project directory is created in the SITE_ROOT.  The name of the directory is PROJECT_SLUG\n\n \
-\tDIR_OWNER = $DIR_OWNER\n\tThe owner of the site directory created\n\n \
-\tAPACHE_CONFIG = $APACHE_CONFIG\n\tThe location of the apache config file to which the virtual host record is added\n\n\
+\tURL_SUFFIX \t= $URL_SUFFIX\n\tAppended to PROJECT_SLUG to create the project URL (PROJECT_SLUG.URL_SUFFIX)\n\n \
+\tIP_ADDRESS \t= $IP_ADDRESS\n\tIP Address associated with the URL in the host file record created\n\n \
+\tMYSQL_USER \t= $MYSQL_USER\n\tThe MySQL account to whom full schema access is granted.  The MySQL schema created is named PROJECT_SLUG\n\n \
+\tMYSQL_ADMIN \t= $MYSQL_ADMIN\n\tMySQL administrative account used to create DB and grant access\n\n \
+\tMYSQL_ADMIN_PW \t= ********\n\tPassword for MySQL admin account\n\n \
+\tSITE_ROOT \t= $SITE_ROOT\n\tThe project directory is created in the SITE_ROOT.  The name of the directory is PROJECT_SLUG\n\n \
+\tDIR_OWNER \t= $DIR_OWNER\n\tThe owner of the site directory created\n\n \
+\tAPACHE_CONFIG \t= $APACHE_CONFIG\n\tThe location of the apache config file to which the virtual host record is added\n\n\
 Description:\n \
 \t1. Adds a record to the host file: PROJECT_SLUG.URL_SUFFIX=IP_ADDRESS.\n \
 \t2. Creates a directory if necessary named PROJECT_SLUG in the SITE_ROOT directory.\n \
 \t3. Adds a virtual host record to the apache config file located at APACHE_CONFIG.\n \
 \t4. Creates a MySQL schema named PROJECT_SLUG, and grants MYSQL_USER full access to it.\n\n \
+Note: you will probably need to run this with super user privileges.\n\n \
 "
 
 # validate arguments - must be exactly 1
@@ -97,7 +105,7 @@ if ! grep -q "$PROJECT_URL" $HOSTS_FILE ; then
 	
 else
 
-	printf "$PROJECT_URL already exists in hosts file"
+	printf "$PROJECT_URL already exists in hosts file\n"
 
 fi
 
@@ -119,22 +127,22 @@ printf "Added $ROOTDIR (owned by $DIR_OWNER )\n"
 if ! grep -q "$ROOTDIR" $APACHE_CONFIG ; then
 
 	printf "\n<VirtualHost *:80>\n \
-		ServerName $PROJECT_URL \n\
-		DocumentRoot $ROOTDIR \n\
-		SetEnv APPLICATION_ENV \"development\" \n\
-		<Directory $ROOTDIR> \n\
-			DirectoryIndex index.php \n\
-			AllowOverride All \n\
-			Order allow,deny \n\
-			Allow from all \n\
-		</Directory> \n\
-	</VirtualHost> \n" >> $APACHE_CONFIG 
+	ServerName $PROJECT_URL \n\
+	DocumentRoot $ROOTDIR \n\
+	SetEnv APPLICATION_ENV \"development\" \n\
+	<Directory $ROOTDIR> \n\
+		DirectoryIndex index.php \n\
+		AllowOverride All \n\
+		Order allow,deny \n\
+		Allow from all \n\
+	</Directory> \n\
+</VirtualHost> \n" >> $APACHE_CONFIG 
 
 	printf "Added Virtual Host Record\n"
 
 else
 
-	printf "$ROOTDIR already exists in $APACHE_CONFIG"
+	printf "$ROOTDIR already exists in $APACHE_CONFIG\n"
 	
 fi
 
@@ -143,11 +151,18 @@ apachectl restart
 
 printf "Restarted Apache\n"
 
-# add line to make it pretty
-printf "\n"
+
+##############################################################
+# Handle database creation and access
+
+# Create Database
+mysql -u $MYSQL_ADMIN -p$MYSQL_ADMIN_PW -e "CREATE DATABASE IF NOT EXISTS $PROJECT_SLUG"
+printf "Created Database $PROJECT_SLUG\n"
+
+# Grant full access to MYSQL_USER
+mysql -u $MYSQL_ADMIN -p$MYSQL_ADMIN_PW -e "GRANT ALL ON $PROJECT_SLUG.* TO '$MYSQL_USER'@'localhost'"
+mysql  -u $MYSQL_ADMIN -p$MYSQL_ADMIN_PW -e "flush privileges"
+printf "All privileges granted to $MYSQL_USER\n"
 
 
-
-
-
-
+printf "\nProject config complete\n\n"
