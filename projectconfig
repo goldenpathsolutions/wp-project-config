@@ -11,9 +11,9 @@
 # Note: you will probably have to run this with sudo
 #
 # Author: 	Patrick Jackson <pjackson@goldenpathsolutions.com>
-# Version:	1.1.1
+# Version:	1.2.0
 # License: 	GPL2
-# Modified:	2014-09-12
+# Modified:	2014-12-09
 # Created: 	2014-09-10
 
 
@@ -35,6 +35,7 @@ SITE_ROOT="/Users/pjackson/Sites"		# by default, the web site directory is added
 DIR_OWNER="pjackson:staff"	# owner of the directory created
 HOSTS_FILE="/etc/hosts"	# location of hosts file
 APACHE_CONFIG="/etc/apache2/users/$SUDO_USER.conf"	# the apache config file to which the virtual host record is added
+ROOT_PRIVILEGES="777"	# Default privileges for the root folder
 
 
 # define usage
@@ -117,9 +118,9 @@ fi
 ROOTDIR="$SITE_ROOT/$PROJECT_SLUG"
 
 # Create ROOTDIR if necessary, and set the owner
-mkdir -p $ROOTDIR			# Create ROOTDIR if it doesn't already exist
-chown $DIR_OWNER $ROOTDIR	# Make ROOTDIR owned by DIR_OWNER
-chmod 777 $ROOTDIR			# Make ROOTDIR writable for BackupBuddy
+mkdir -p $ROOTDIR				# Create ROOTDIR if it doesn't already exist
+chown $DIR_OWNER $ROOTDIR		# Make ROOTDIR owned by DIR_OWNER
+chmod $ROOT_PRIVILEGES $ROOTDIR	# Make ROOTDIR writable for BackupBuddy
 
 printf "Added $ROOTDIR (owned by $DIR_OWNER )\n"
 
