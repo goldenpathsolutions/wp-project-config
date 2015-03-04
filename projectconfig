@@ -137,6 +137,7 @@ if ! grep -q "$ROOTDIR" $APACHE_CONFIG ; then
 		AllowOverride All \n\
 		Order allow,deny \n\
 		Allow from all \n\
+		Require all granted \n\
 	</Directory> \n\
 </VirtualHost> \n" >> $APACHE_CONFIG 
 
