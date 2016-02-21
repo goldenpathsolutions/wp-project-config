@@ -126,7 +126,7 @@ printf "Added $ROOTDIR (owned by $DIR_OWNER )\n"
 
 # Add virtual host record if it doesn't already exist
 # assume it exists if the root path is found
-if ! grep -q "$ROOTDIR" $APACHE_CONFIG ; then
+if ! grep -q "<Directory $ROOTDIR>" $APACHE_CONFIG ; then
 
 	printf "\n<VirtualHost *:80>\n \
 	ServerName $PROJECT_URL \n\
@@ -145,7 +145,7 @@ if ! grep -q "$ROOTDIR" $APACHE_CONFIG ; then
 
 else
 
-	printf "$ROOTDIR already exists in $APACHE_CONFIG\n"
+	printf "<Directory $ROOTDIR> already exists in $APACHE_CONFIG\n"
 	
 fi
 
